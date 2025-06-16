@@ -20,9 +20,21 @@ jobs:
         run: |
           echo "GitHub Ref: ${{ github.ref }}"
           echo "GitHub Repository: ${{ github.repository }}"
-      - name: Debug GitHub OIDC Token
+      - name: Request OIDC Token and Decode Claims
+        id: oidc
         run: |
-          echo "${{ steps.auth.outputs.token }}"
+          echo "🔐 Requesting OIDC token..."
+          TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            -d '{"audience":"https://iam.googleapis.com"}' \
+            https://token.actions.githubusercontent.com/oauth2/v1/token | jq -r .id_token)
+          echo "📜 Decoding token claims..."
+          echo "$TOKEN" | cut -d "." -f2 | base64 -d | jq
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ steps.auth.outputs.token }}
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ steps.auth.outputs.token_url }}
+
 
       - name: "Checkout repository"
         uses: actions/checkout@v4
