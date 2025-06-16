@@ -1,0 +1,35 @@
+name: CI/CD DEV
+on:
+  push:
+    branches:
+    - dev
+  workflow_dispatch:
+    inputs:
+      RELEASE_TYPE: 
+        description: 'Release Type'
+        default: "NULL"
+        type: choice
+        options:
+          - PATCH
+          - MINOR
+          - MAJOR
+jobs:
+  call-reusable-workflow:
+    uses: uhc-tech-employer-individual/obm_obm-actions/.github/workflows/build-deploy-to-gcp-api-testing.yml@main
+    with:
+      GAR_LOCATION: "us-central1"
+      environment: dev
+      GKE_NAMESPACE: obmdev
+      gke_cluster_name: obm-autopilot-nonprod
+      PROJECT_ID: "ywmytazy-916j-vtwv-wypu-zt9nkt"
+      REPOSITORY: "obm_imd-customer-profile-api"
+      DEPLOYMENT_NAME: "dev-customer-profile-api"
+      DOCKER_REPOSITORY: "docker.repo1.uhc.com"
+      docker_chainguard: "optum-docker-auth-prod.repo1.uhc.com"
+      IMAGE_NAME: "obm_imd-customer-profile-api"
+      TAG: "latest"
+      BUILD_TAG: "-HCC"
+      RELEASE_TYPE: ${{ inputs.RELEASE_TYPE }}
+      BRANCH: "dev"
+      REPO_NAME: "obm_imd-customer-profile-api"      
+    secrets: inherit
