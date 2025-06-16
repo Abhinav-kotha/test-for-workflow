@@ -31,9 +31,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           token_format: 'access_token'
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-          audience: 'https://github.com/Abhinav-kotha'
+          workload_identity_provider: 'projects/489593152717/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'obm-devops-secret-manager@ywmytazy-916j-vtwv-wypu-zt9nkt.iam.gserviceaccount.com'
 
       - name: Install Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
