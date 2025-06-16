@@ -1,4 +1,4 @@
-name: Test with checkout
+name: Test with checkout(oidc)
 
 on:
   workflow_dispatch:
@@ -21,32 +21,37 @@ jobs:
           echo "GitHub Ref: ${{ github.ref }}"
           echo "GitHub Repository: ${{ github.repository }}"
 
-        
-      - name: Request and Decode OIDC Token
-        id: oidc
-        run: |
-          echo "🔐 Requesting OIDC token..."
-          TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}" | jq -r .value)
-
-          echo "📜 Decoding token claims..."
-          echo "$TOKEN" | cut -d '.' -f2 | base64 -d | jq
-        env:
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ steps.auth.outputs.token }}
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ steps.auth.outputs.token_url }}
-
-
-
-      - name: "Checkout repository"
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.BRANCH }}
 
+      - name: Request and Decode OIDC Token
+        id: decode-oidc
+        run: |
+          echo "🔐 Requesting OIDC token..."
+          TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r .value)
+
+          if [ -z "$TOKEN" ]; then
+            echo "❌ Failed to retrieve OIDC token."
+            exit 1
+          fi
+
+          echo "📜 Decoding token claims..."
+          PAYLOAD=$(echo "$TOKEN" | cut -d '.' -f2 | tr '_-' '/+' | base64 -d 2>/dev/null || echo "❌ Failed to decode token.")
+          echo "$PAYLOAD" | jq .
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ steps.auth.outputs.token }}
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ steps.auth.outputs.token_url }}
+
       - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           token_format: 'access_token'
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          audience: 'https://iam.googleapis.com/${{ secrets.WIF_PROVIDER }}'
 
       - name: Install Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
