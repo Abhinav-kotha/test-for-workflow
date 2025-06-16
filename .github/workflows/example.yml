@@ -1,0 +1,37 @@
+name: Access GCP Secret only
+
+on:
+  workflow_dispatch:
+
+jobs:
+  access-secret:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/489593152717/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'obm-devops-secret-manager@ywmytazy-916j-vtwv-wypu-zt9nkt.iam.gserviceaccount.com'
+
+      - id: secrets
+        name: Access Secret Manager
+        uses: google-github-actions/get-secretmanager-secrets@v2
+        with:
+          secrets: |
+            token:ywmytazy-916j-vtwv-wypu-zt9nkt/DB_PASSWORD
+
+      - id: publish
+        name: Use the secret
+        run: |
+          echo "Using token: ${{ steps.secrets.outputs.token }}"
+        env:
+          TOKEN: ${{ steps.secrets.outputs.token }}
