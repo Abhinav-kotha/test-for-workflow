@@ -1,16 +1,26 @@
 name: Test with checkout
- 
+
 on:
   workflow_dispatch:
- 
+    inputs:
+      BRANCH:
+        description: 'Branch to run the workflow on'
+        required: true
+        default: 'main'
+
 jobs:
   test-secrets:
     permissions:
       contents: 'read'
       id-token: 'write'
- 
+
     runs-on: ubuntu-latest
     steps:
+      - name: Print GitHub context
+        run: |
+          echo "GitHub Ref: ${{ github.ref }}"
+          echo "GitHub Repository: ${{ github.repository }}"
+
       - name: "Checkout repository"
         uses: actions/checkout@v4
         with:
