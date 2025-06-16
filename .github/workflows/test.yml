@@ -1,0 +1,35 @@
+name: Test with checkout
+ 
+on:
+  workflow_dispatch:
+ 
+jobs:
+  test-secrets:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+ 
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.BRANCH }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Install Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ywmytazy-916j-vtwv-wypu-zt9nkt
+          export_default_credentials: true
+
+      - name: Access and print secret
+        run: |
+          SECRET_VALUE=$(gcloud secrets versions access latest --secret="DB_PASSWORD")
+          echo "✅ Successfully pulled secret: $SECRET_VALUE"
